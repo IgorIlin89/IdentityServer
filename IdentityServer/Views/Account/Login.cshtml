@@ -1,0 +1,31 @@
+﻿@model IdentityServer.Models.LoginModel
+
+<h4>Anmelden</h4>
+
+
+<form asp-action="SignIn" asp-controller="Account" method="post">
+    @Html.AntiForgeryToken()
+
+    @Html.HiddenFor(m => m.ReturnUrl)
+    @Html.HiddenFor(m => m.LoginCancelation)
+
+    @Html.ValidationSummary("", new { @class = "text-danger" })
+    <!--<div asp-validation-summary="ModelOnly" class="text-danger"></div>-->
+
+    <div class="form-group">
+        <div class="col-sm-4">
+            <label asp-for="UserName">UserName</label>
+            <input asp-for="UserName" class="form-control" placeholder="" />
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-4">
+            <label asp-for="Password">Password</label>
+            <input asp-for="Password" class="form-control" placeholder="" type="password" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+    </div>
+
+    <input type="submit" value="Login" />
+</form>
