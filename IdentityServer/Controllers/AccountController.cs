@@ -2,8 +2,11 @@
 using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
+using IdentityServer.Application.Commands;
+using IdentityServer.Application.Handlers.Interfaces;
 using IdentityServer.Database.Interfaces;
 using IdentityServer.Domain;
+using IdentityServer.DtosAndModels;
 using IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -19,15 +22,18 @@ public class AccountController : Controller
     private readonly ICustomerRepository _customerRepository;
     private readonly IIdentityServerInteractionService _interaction;
     private readonly IEventService _events;
+    private readonly IAddUserCommandHandler _addUserCommandHandler;
 
     public AccountController(
         IIdentityServerInteractionService interaction,
         IEventService events,
-        ICustomerRepository customerRepository)
+        ICustomerRepository customerRepository,
+        IAddUserCommandHandler addUserCommandHandler)
     {
         _customerRepository = customerRepository;
         _interaction = interaction;
         _events = events;
+        _addUserCommandHandler = addUserCommandHandler;
     }
 
     [HttpGet]
@@ -160,7 +166,7 @@ public class AccountController : Controller
 
         await _events.RaiseAsync(new UserLoginFailureEvent(model.UserName, "invalid credentials", clientId: context?.Client.ClientId));
 
-        return View(model);
+        return View("~/Views/Account/Login.cshtml", model);
     }
 
     protected async Task SignIn(User customer)
@@ -182,10 +188,10 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> SignOut()
+    public async Task<IActionResult> LogOut()
     {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return RedirectToAction(nameof(SignIn));
+        await HttpContext.SignOutAsync();// CookieAuthenticationDefaults.AuthenticationScheme);
+        return Redirect("https://localhost:7195");
     }
 
     /// <summary>
@@ -195,5 +201,46 @@ public class AccountController : Controller
     {
         return !context.RedirectUri.StartsWith("https", StringComparison.Ordinal)
 && !context.RedirectUri.StartsWith("http", StringComparison.Ordinal);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Register(RegistrationModel model,
+        CancellationToken cancellationToken)
+    {
+        if (ModelState.IsValid)
+        {
+            if (model.Password == model.RepeatPassword)
+            {
+                var userToAdd = new User
+                {
+                    EMail = model.EMail,
+                    Password = model.Password.Trim(),
+                    GivenName = model.FirstName,
+                    Surname = model.LastName,
+                    Age = model.Age,
+                    Country = model.Country,
+                    City = model.City,
+                    Street = model.Street,
+                    HouseNumber = model.HouseNumber,
+                    PostalCode = model.PostalCode
+                };
+
+                var command = new AddUserCommand(model.EMail, model.FirstName, model.LastName, model.Age,
+                    model.Country, model.City, model.Street, model.HouseNumber, model.PostalCode, model.Password);
+
+                var userToLogin = await _addUserCommandHandler.HandleAsync(command, cancellationToken);
+
+                await SignIn(userToLogin);
+
+                return RedirectToAction("Index", "User");
+            }
+            else
+            {
+                ModelState.AddModelError("Model", "The repeated Password was not the same");
+                return View(model);
+            }
+        }
+
+        return View(model);
     }
 }

@@ -23,10 +23,13 @@ internal static class HostingExtensions
         });
 
 
-        services.AddIdentityServer(options => { })
-            .AddInMemoryIdentityResources(Config.IdentityResources)
-            .AddInMemoryApiScopes(Config.ApiScopes)
-            .AddInMemoryClients(Config.Clients);
+        services.AddIdentityServer(options =>
+        {
+            options.Endpoints.EnableEndSessionEndpoint = true;
+        })
+        .AddInMemoryIdentityResources(Config.IdentityResources)
+        .AddInMemoryApiScopes(Config.ApiScopes)
+        .AddInMemoryClients(Config.Clients);
 
         services.AddAuthentication();
 

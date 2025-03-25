@@ -12,6 +12,7 @@ public static class ServiceCollectionExtension
         return serviceCollection.
             AddScoped<IGetUserListCommandHandler, GetUserListCommandHandler>().
             AddScoped<IGetUserByEmailCommandHandler, GetUserByEmailCommandHandler>().
-            AddScoped<IGetUserByIdCommandHandler, GetUserByIdCommandHandler>();
+            AddScoped<IGetUserByIdCommandHandler, GetUserByIdCommandHandler>().
+            AddScoped<IAddUserCommandHandler, AddUserCommandHandler>();
     }
 }
